@@ -1,4 +1,4 @@
-yaml
+name: ASX Strong Buy Screener
 
 on:
   schedule:
