@@ -1,36 +1,110 @@
-# This is a basic workflow to help you get started with Actions
 
-name: CI
+Claude finished the response
+This is a big and important discovery — let me check the actual script content since it didn't render as visible text.
 
-# Controls when the workflow will run
+
+Validated script accuracy and prepared to verify data consistency
+Validated script accuracy and prepared to verify data consistency
+This is the answer. Now everything lines up perfectly — the file you originally received is called screener.py (not daily_screener.py), it writes reports into an output/ folder, reads both ticker CSVs with matching names, and has no email step at all — the README confirms email was optional and never built in by default.
+
+So here's the real story: at some point, GitHub ended up with a file called daily_screener.py — an older, mismatched draft — instead of the correct, finished screener.py. That explains every mismatch we found. The asx_screener.yml workflow was actually correct all along (python screener.py, output/*.xlsx) — it just had nothing correct to call.
+
+Let me quickly check the ticker CSVs to make sure those column names line up too:
+
+
+Diagnosed repository mismatch and reconciled correct files
+Diagnosed repository mismatch and reconciled correct files
+This is genuinely great news — I need to correct course from my last message, because it turns out you don't need any of that Gmail/secrets setup at all, and the fixes I suggested for daily_screener.py are no longer needed either.
+
+Here's what actually happened: somewhere along the way, an older draft file (daily_screener.py — with mismatched filenames and unfinished email code) ended up on GitHub, instead of the correct, finished file (screener.py — the one you just uploaded here). The correct screener.py:
+
+Reads both tickers_asx200.csv and tickers_penny_stocks.csv correctly (column header ticker matches perfectly)
+Writes its report into an output/ folder — matching the workflow file exactly
+Has no email step at all — the README confirms email was never built in by default
+And the asx_screener.yml you uploaded (with the 6:30am cron schedule, calling python screener.py, looking in output/*.xlsx) is already correct as-is — no edits needed.
+
+So the real fix is much simpler than what I said before:
+
+Steps to fix it properly
+Delete the wrong file from GitHub: go to daily_screener.py in your repo → click the trash/delete icon (or open it, click the "..." menu → Delete file) → commit.
+Upload the correct screener.py (the one you just gave me) to the root of the repo via "Add file" → "Upload files."
+Replace .github/workflows/asx_screener.yml on GitHub with the exact version you uploaded here (the cron schedule one) — open it on GitHub, click the pencil (edit), select all, delete, paste in the correct version, commit.
+Double check requirements.txt, README.md, tickers_asx200.csv, tickers_penny_stocks.csv on GitHub match what you just uploaded here — re-upload them too if you're at all unsure, to be safe.
+One important setting from the README: go to Settings → Actions → General → Workflow permissions, and select "Read and write permissions." This lets the workflow commit each day's report back into /reports/ — without this, the run will fail at the final "commit" step.
+Ignore everything I said earlier about Gmail/App Passwords — not needed, scrap that.
+Once those are done, go to the Actions tab → click "ASX Strong Buy Screener" → "Run workflow" to test it immediately rather than waiting for tomorrow morning. Let me know what happens.
+
+1785122153238_image.png
+I see the following screenshot.
+
+
+Diagnosed workflow configuration mismatch causing unexpectedly rapid execution
+Diagnosed workflow configuration mismatch causing unexpectedly rapid execution
+Good progress — I can see 4 successful runs, and the wrong daily_screener.py file has been deleted. That's the right direction.
+
+But I can tell from this screenshot that the workflow file itself hasn't been updated yet. Notice each run is still named "CI" — that's the internal name from inside the placeholder workflow (name: CI). If the correct file were live, these runs would be named "ASX Strong Buy Screener" instead (that's the name: inside the correct version). Also, each run only took 9–14 seconds — the real screener takes 5–12 minutes to fetch ~200+ stocks, so these are still just the placeholder printing "Hello, world!"
+
+So the missing step is: actually replace the contents of .github/workflows/asx_screener.yml with the correct version. Uploading screener.py and the other files doesn't touch the workflow file — that needs to be edited separately.
+
+Here's exactly how:
+
+Go to https://github.com/Emutrader/ASX-Screener-Strong-Buy/edit/main/.github/workflows/asx_screener.yml (this takes you straight to the editor for that file)
+Select all the existing text and delete it
+Paste in this exact content:
+yaml
+name: ASX Strong Buy Screener
+
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  schedule:
+    # 20:30 UTC on Sun-Thu = 06:30 AEST (Brisbane, UTC+10, no daylight saving) Mon-Fri.
+    - cron: "30 20 * * 0-4"
+  workflow_dispatch: {}
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  run-screener:
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
+    timeout-minutes: 25
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
+      - name: Check out repo
+        uses: actions/checkout@v4
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run screener
+        run: python screener.py
+
+      - name: Upload report as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: asx-strong-buy-report-${{ github.run_id }}
+          path: output/*.xlsx
+          retention-days: 90
+
+      - name: Commit report into repo /reports folder
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          mkdir -p reports
+          cp output/*.xlsx reports/
+          git config user.name "asx-screener-bot"
+          git config user.email "actions@github.com"
+          git add reports/*.xlsx
+          git diff --cached --quiet || git commit -m "Auto: ASX screener report $(date -u +'%Y-%m-%d')"
+          git push
+
+
+
+
+
+
+
+
+
+
+
+
+Unable to enable push notifications. Please check your browser settings.
