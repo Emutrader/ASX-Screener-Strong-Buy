@@ -27,6 +27,24 @@ jobs:
       - name: Run screener
         run: python screener.py
 
+       - name: Run screener
+        run: python screener.py
+
+      - name: Email report
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.GMAIL_ADDRESS }}
+          password: ${{ secrets.GMAIL_APP_PASSWORD }}
+          subject: "ASX Strong Buy Screener Report"
+          to: ${{ secrets.RECIPIENT_EMAIL }}
+          from: ASX Screener Bot
+          body: "Attached is today's ASX Strong Buy Screener report. This is a research shortlist tool, not financial advice."
+          attachments: output/*.xlsx
+
+      - name: Upload report as workflow artifact
+
       - name: Upload report as workflow artifact
         uses: actions/upload-artifact@v4
         with:
