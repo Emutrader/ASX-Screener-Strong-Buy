@@ -1,3 +1,4 @@
+yaml
 name: ASX Strong Buy Screener
 
 on:
@@ -27,9 +28,6 @@ jobs:
       - name: Run screener
         run: python screener.py
 
-       - name: Run screener
-        run: python screener.py
-
       - name: Email report
         uses: dawidd6/action-send-mail@v3
         with:
@@ -42,8 +40,6 @@ jobs:
           from: ASX Screener Bot
           body: "Attached is today's ASX Strong Buy Screener report. This is a research shortlist tool, not financial advice."
           attachments: output/*.xlsx
-
-      - name: Upload report as workflow artifact
 
       - name: Upload report as workflow artifact
         uses: actions/upload-artifact@v4
